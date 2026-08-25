@@ -112,3 +112,9 @@ cloudflared tunnel route dns klinika crm.twojadomena.pl
 cloudflared tunnel run klinika     # + config.yml wskazujący na http://localhost:3030
 ```
 Więcej: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/
+## 🔧 Rozwiązywanie problemów z tunelem
+
+- **„Could not resolve host” lokalnie, choć URL działa z innych urządzeń** — przyczyną bywa przejmowanie DNS
+  przez Tailscale (MagicDNS, resolver `100.100.100.100`). Naprawa: `tailscale set --accept-dns=false`
+  (powrót: `tailscale set --accept-dns=true`). Można też sprawdzić adres bez DNS:
+  `curl --resolve <host>:443:104.16.231.132 https://<host>/`.
