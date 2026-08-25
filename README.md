@@ -96,3 +96,17 @@ CRM_clinic/
 - **Zmień domyślne hasło administratora** (ADMIN_PASSWORD w `.env`) i **SESSION_SECRET** na losowe wartości.
 - Pliki `.env`, baza `data/clinic.db`, uploady i kopie zapasowe **nie są** publikowane (.`gitignore`).
 - Domyślne dane demo są przykładowe i fikcyjne.
+## 🌐 Dostęp z internetu (Cloudflare Tunnel)
+
+**Szybki (bez konta i domeny)** — publiczny adres, ale zmienia się przy każdym restarcie:
+```bash
+./scripts/tunnel-quick.sh        # lub: cloudflared tunnel --url http://localhost:3030
+```
+**Stały adres (polecany do codziennej pracy)** — wymaga konta Cloudflare i domeny:
+```bash
+cloudflared tunnel login
+cloudflared tunnel create klinika
+cloudflared tunnel route dns klinika crm.twojadomena.pl
+cloudflared tunnel run klinika     # + config.yml wskazujący na http://localhost:3030
+```
+Więcej: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/
