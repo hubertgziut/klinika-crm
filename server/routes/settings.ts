@@ -10,9 +10,9 @@ const PUBLIC_KEYS = ["clinic_name", "clinic_emoji"];
 const ADMIN_KEYS = [
   "clinic_name", "clinic_emoji", "smtp_host", "smtp_port", "smtp_user",
   "smtp_secure", "smtp_from", "smtp_pass", "openai_key", "search_api_key",
-  "app_url",
+  "app_url", "ai_provider", "deepseek_key", "deepseek_model",
 ];
-const SECRET_KEYS = ["smtp_pass", "openai_key", "search_api_key"];
+const SECRET_KEYS = ["smtp_pass", "openai_key", "search_api_key", "deepseek_key"];
 
 settingsRouter.get("/", (_req, res) => {
   const out: Record<string, string> = {};

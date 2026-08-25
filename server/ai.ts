@@ -1,12 +1,43 @@
 import { getSetting, db } from "./db";
 
-// ===== Faza 6 — Asystent AI (OpenAI): narzędzia, czat (function calling), organizacja danych =====
+// ===== Faza 6+ — Asystent AI (OpenAI / DeepSeek): narzędzia, czat (function calling), organizacja danych =====
 
 export function getOpenAIKey(): string {
   return getSetting("openai_key") || process.env.OPENAI_API_KEY || "";
 }
+export function getDeepSeekKey(): string {
+  return getSetting("deepseek_key") || process.env.DEEPSEEK_API_KEY || "";
+}
+export function getDeepSeekModel(): string {
+  return getSetting("deepseek_model") || process.env.DEEPSEEK_MODEL || "deepseek-v4-flash";
+}
+
+export type AiProvider = "openai" | "deepseek";
+export interface AiStatus {
+  demo: boolean;
+  provider: AiProvider | "demo";
+  model: string | null;
+}
+
+/** Który dostawca AI jest aktywny (auto → DeepSeek, gdy jest klucz; potem OpenAI). */
+export function getAiProvider(): AiProvider | null {
+  const pref = (getSetting("ai_provider") || process.env.AI_PROVIDER || "auto").toLowerCase();
+  if (pref === "openai" && getOpenAIKey()) return "openai";
+  if (pref === "deepseek" && getDeepSeekKey()) return "deepseek";
+  if (pref !== "openai" && pref !== "deepseek") {
+    if (getDeepSeekKey()) return "deepseek";
+    if (getOpenAIKey()) return "openai";
+  }
+  return null;
+}
 export function isDemoMode(): boolean {
-  return !getOpenAIKey();
+  return getAiProvider() === null;
+}
+export function getAiStatus(): AiStatus {
+  const p = getAiProvider();
+  if (p === "deepseek") return { demo: false, provider: "deepseek", model: getDeepSeekModel() };
+  if (p === "openai") return { demo: false, provider: "openai", model: OPENAI_MODEL };
+  return { demo: true, provider: "demo", model: null };
 }
 
 export interface AiMessage { role: "system" | "user" | "assistant"; content: string }
@@ -34,7 +65,7 @@ export interface AiChatResult {
   products?: AiProduct[];
 }
 
-const MODEL = "gpt-4o-mini";
+const OPENAI_MODEL = "gpt-4o-mini";
 const round2 = (n: number) => Math.round((Number(n) || 0) * 100) / 100;
 
 // ===== Narzędzia — wykonanie na bazie danych =====
@@ -228,26 +259,45 @@ function runTool(name: string, args: unknown): string {
   }
 }
 
-async function callOpenAI(messages: OpenAiMessage[], withTools: boolean): Promise<any> {
-  const key = getOpenAIKey();
+interface ChatApiConfig {
+  label: string;
+  baseUrl: string;
+  key: string;
+  model: string;
+}
+
+/** Konfiguracja aktywnego dostawcy AI (DeepSeek / OpenAI) — null = tryb demo. */
+function getChatConfig(): ChatApiConfig | null {
+  const p = getAiProvider();
+  if (p === "deepseek") {
+    return { label: "DeepSeek", baseUrl: "https://api.deepseek.com", key: getDeepSeekKey(), model: getDeepSeekModel() };
+  }
+  if (p === "openai") {
+    return { label: "OpenAI", baseUrl: "https://api.openai.com/v1", key: getOpenAIKey(), model: OPENAI_MODEL };
+  }
+  return null;
+}
+
+/** Wywołanie chat/completions (OpenAI-kompatybilne API — działa też dla DeepSeek). */
+async function callChatCompletions(cfg: ChatApiConfig, messages: OpenAiMessage[], withTools: boolean): Promise<any> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 30_000);
   try {
-    const body: Record<string, unknown> = { model: MODEL, messages, temperature: 0.3, max_tokens: 1600 };
+    const body: Record<string, unknown> = { model: cfg.model, messages, temperature: 0.3, max_tokens: 1600 };
     if (withTools) body.tools = TOOLS;
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    const res = await fetch(cfg.baseUrl + "/chat/completions", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${cfg.key}` },
       body: JSON.stringify(body),
       signal: controller.signal,
     });
     if (!res.ok) {
       const t = await res.text();
-      throw new Error(`OpenAI ${res.status}: ${t.slice(0, 220)}`);
+      throw new Error(`${cfg.label} ${res.status}: ${t.slice(0, 220)}`);
     }
     return await res.json();
   } catch (e: any) {
-    if (e?.name === "AbortError") throw new Error("Przekroczono czas odpowiedzi OpenAI (30 s)");
+    if (e?.name === "AbortError") throw new Error(`Przekroczono czas odpowiedzi ${cfg.label} (30 s)`);
     throw e;
   } finally {
     clearTimeout(timer);
@@ -260,12 +310,12 @@ async function callOpenAI(messages: OpenAiMessage[], withTools: boolean): Promis
  * Zwraca surową treść odpowiedzi (JSON) do sparsowania przez route.
  */
 export async function aiChat(messages: AiMessage[]): Promise<string> {
-  const key = getOpenAIKey();
-  if (!key) return demoReply(messages);
+  const cfg = getChatConfig();
+  if (!cfg) return demoReply(messages);
   const openAiMessages: OpenAiMessage[] = messages.map((m) => ({ role: m.role, content: m.content }));
   let data: any;
   for (let i = 0; i < 4; i++) {
-    data = await callOpenAI(openAiMessages, true);
+    data = await callChatCompletions(cfg, openAiMessages, true);
     const msg = data?.choices?.[0]?.message;
     const toolCalls: any[] = Array.isArray(msg?.tool_calls) ? msg.tool_calls : [];
     if (toolCalls.length > 0) {
@@ -339,15 +389,15 @@ export interface OrganizeRow { id?: string; cells: Record<string, unknown> }
  */
 export async function organizeData(columns: OrganizeColumn[], rows: OrganizeRow[]): Promise<{ rows: OrganizeRow[] }> {
   if (rows.length < 2) return { rows };
-  const key = getOpenAIKey();
-  if (!key) return { rows: demoOrganize(columns, rows) };
+  const cfg = getChatConfig();
+  if (!cfg) return { rows: demoOrganize(columns, rows) };
   try {
     const sys =
       "Pomagasz w aplikacji Klinika CRM porządkować dane tabeli. Otrzymasz kolumny i wiersze jako JSON. " +
       "Posegreguj wiersze (posortuj lub pogrupuj sensownie, wybierając kryterium) i zwróć WYŁĄCZNIE obiekt JSON: " +
       '{"order":[indeksy wierszy w nowej kolejności]} LUB {"rows":[te same wiersze w nowej kolejności]}. ' +
       "Nie zmieniaj zawartości komórek ani liczby wierszy.";
-    const data = await callOpenAI([
+    const data = await callChatCompletions(cfg, [
       { role: "system", content: sys },
       { role: "user", content: JSON.stringify({ columns, rows }) },
     ], false);
@@ -479,7 +529,7 @@ function demoReply(messages: AiMessage[]): string {
       "• podsumować projekty, zadania i zakupy — np. „podsumuj”;\n" +
       "• wyszukać zadania — np. „znajdź zadania o pralce”;\n" +
       "• uporządkować dane w tabelach — przycisk „✨ Segreguj dane” w module Tabele.\n" +
-      "Dodanie klucza OpenAI w Ustawieniach włączy pełny tryb z wyszukiwaniem na żywo.",
+      "Dodanie klucza OpenAI lub DeepSeek w Ustawieniach włączy pełny tryb z wyszukiwaniem na żywo.",
   });
 }
 

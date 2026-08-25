@@ -7,7 +7,10 @@ interface AdminSettings {
   clinic_name: string; clinic_emoji: string;
   smtp_host: string; smtp_port: string; smtp_user: string; smtp_secure: string; smtp_from: string;
   smtp_pass: string; openai_key: string; search_api_key: string; app_url: string;
+  ai_provider: string; deepseek_key: string; deepseek_model: string;
 }
+
+interface AiStatus { demo: boolean; provider: "openai" | "deepseek" | "demo"; model: string | null }
 
 interface EmailQueueInfo {
   pending: number;
@@ -39,6 +42,7 @@ const EMPTY: AdminSettings = {
   clinic_name: "Klinika", clinic_emoji: "🩺",
   smtp_host: "", smtp_port: "587", smtp_user: "", smtp_secure: "false", smtp_from: "",
   smtp_pass: "", openai_key: "", search_api_key: "", app_url: "",
+  ai_provider: "auto", deepseek_key: "", deepseek_model: "deepseek-v4-flash",
 };
 
 const ROLE_LABEL: Record<AccountUser["role"], string> = {
@@ -61,6 +65,7 @@ export default function Settings() {
   const user = useApp((s) => s.user)!;
   const [form, setForm] = useState<AdminSettings>(EMPTY);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [aiStatus, setAiStatus] = useState<AiStatus | null>(null);
   const [users, setUsers] = useState<AccountUser[] | null>(null);
   const isAdmin = user.role === "admin";
 
@@ -152,6 +157,7 @@ export default function Settings() {
   useEffect(() => {
     if (isAdmin) {
       api.get<AdminSettings>("/api/settings/admin").then((d) => setForm({ ...EMPTY, ...d })).catch(() => {});
+      api.get<AiStatus>("/api/ai/status").then(setAiStatus).catch(() => {});
       loadUsers();
       loadQueue();
       setTestEmailTo(user.email || "");
@@ -168,6 +174,7 @@ export default function Settings() {
     try {
       await api.patch("/api/settings/admin", form);
       setMsg({ ok: true, text: "✅ Ustawienia zapisane" });
+      api.get<AiStatus>("/api/ai/status").then(setAiStatus).catch(() => {});
     } catch (e: any) {
       setMsg({ ok: false, text: "❌ " + (e?.message || "błąd") });
     }
@@ -459,13 +466,39 @@ export default function Settings() {
           </div>
 
           <div className="panel" style={{ marginBottom: 16 }}>
-            <div className="panel-title">✨ Asystent AI (OpenAI)
+            <div className="panel-title">✨ Asystent AI (OpenAI / DeepSeek)
               <span className="spacer" />
               <span className="badge purple">bez klucza = tryb demo</span>
             </div>
-            <label className="field">Klucz API OpenAI
-              <input className="input" type="password" value={form.openai_key} onChange={(e) => set("openai_key", e.target.value)} placeholder={form.openai_key === "***" ? "zapisany — zostaw, aby nie zmieniać" : "sk-…"} />
+
+            <label className="field" style={{ marginBottom: 12 }}>Dostawca AI
+              <select className="input" value={form.ai_provider} onChange={(e) => set("ai_provider", e.target.value)}>
+                <option value="auto">Auto — DeepSeek, jeśli jest klucz; inaczej OpenAI</option>
+                <option value="deepseek">DeepSeek (np. deepseek-v4-flash)</option>
+                <option value="openai">OpenAI (gpt-4o-mini)</option>
+              </select>
             </label>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <label className="field">Klucz API OpenAI
+                <input className="input" type="password" value={form.openai_key} onChange={(e) => set("openai_key", e.target.value)} placeholder={form.openai_key === "***" ? "zapisany — zostaw, aby nie zmieniać" : "sk-…"} />
+              </label>
+              <label className="field">Klucz API DeepSeek
+                <input className="input" type="password" value={form.deepseek_key} onChange={(e) => set("deepseek_key", e.target.value)} placeholder={form.deepseek_key === "***" ? "zapisany — zostaw, aby nie zmieniać" : "sk-…"} />
+              </label>
+            </div>
+
+            <label className="field" style={{ marginTop: 12 }}>Model DeepSeek
+              <input className="input" value={form.deepseek_model} onChange={(e) => set("deepseek_model", e.target.value)} placeholder="deepseek-v4-flash" />
+            </label>
+
+            {aiStatus && (
+              <div style={{ marginTop: 12, fontSize: 12.5, padding: "9px 12px", borderRadius: "var(--radius-sm)", background: "var(--sidebar-bg)" }}>
+                {aiStatus.demo
+                  ? <>⚙️ <b>Tryb demo</b> — dodaj klucz OpenAI lub DeepSeek, aby włączyć pełny asystent.</>
+                  : <>✅ Aktywny dostawca: <b>{aiStatus.provider === "deepseek" ? "DeepSeek (" + (aiStatus.model || "—") + ")" : "OpenAI (" + (aiStatus.model || "—") + ")"}</b></>}
+              </div>
+            )}
           </div>
 
           <div className="panel" style={{ marginBottom: 16 }}>

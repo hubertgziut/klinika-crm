@@ -1,7 +1,7 @@
 # 🩺 Klinika CRM
 
 Wewnętrzny workspace CRM dla kliniki — komunikacja zespołu, projekty i zadania, tabele i dokumenty,
-inwentarz, koszyki zakupowe z linkami do hurtowni, zamówienia oraz Asystent AI (OpenAI).
+inwentarz, koszyki zakupowe z linkami do hurtowni, zamówienia oraz Asystent AI (OpenAI / DeepSeek).
 Działa w przeglądarce, uruchamiany lokalnie na komputerze i dostępny dla zespołu w sieci lokalnej (LAN).
 
 Interfejs: **Wariant 4 — kolorowy (styl Notion/Asana)** · Język: **polski**.
@@ -50,8 +50,10 @@ Konta zespołu zakłada administrator w **Ustawienia → Zarządzanie kontami** 
 ### Powiadomienia e-mail (SMTP)
 W **Ustawienia → Powiadomienia e-mail** podaj: host, port, użytkownika, hasło, adres „od”. Możesz też użyć zmiennych .env (SMTP_*). Po zapisie: „✉️ Wyślij e-mail testowy”. Powiadomienia trafiają do kolejki i są wysyłane co 30 s.
 
-### Asystent AI (OpenAI)
-W **Ustawienia → Asystent AI** wklej klucz API (sk-…). **Bez klucza** AI działa w trybie demo (przykładowe odpowiedzi + wyszukiwanie w bazie kliniki).
+### Asystent AI (OpenAI / DeepSeek)
+W **Ustawienia → Asystent AI** wybierz dostawcę (Auto / OpenAI / DeepSeek) i wklej klucz API
+(OpenAI: `sk-…`, DeepSeek: `sk-…` z platform.deepseek.com; model DeepSeek domyślnie `deepseek-v4-flash`).
+**Bez klucza** AI działa w trybie demo (przykładowe odpowiedzi + wyszukiwanie w bazie kliniki).
 
 ## Skrypty
 

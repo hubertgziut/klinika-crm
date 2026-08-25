@@ -3,11 +3,16 @@ import { z } from "zod";
 import { db } from "../db";
 import { newId, nowISO, safeParse } from "../util";
 import { requireAuth } from "../auth";
-import { aiChat, isDemoMode, organizeData, parseAiContent, SYSTEM_PROMPT } from "../ai";
+import { aiChat, getAiStatus, isDemoMode, organizeData, parseAiContent, SYSTEM_PROMPT } from "../ai";
 
 // ===== Faza 6 — Asystent AI: czat, organizacja danych, wątki =====
 export const aiRouter = Router();
 aiRouter.use(requireAuth);
+
+// ===== Który dostawca AI jest aktywny (do panelu ustawień) =====
+aiRouter.get("/status", (_req, res) => {
+  res.json(getAiStatus());
+});
 
 const chatSchema = z.object({
   threadId: z.string().min(1).optional(),

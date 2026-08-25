@@ -30,7 +30,7 @@ Witaj w przestrzeni pracy kliniki! Wszystko w jednym miejscu: zadania, projekty,
 
 - Zapytaj po polsku: „znajdź pralkę do 3 000 zł”, „co mam w koszyku?”, „podsumuj zadania”.
 - Wyniki-produkty to **karty** — przeciągnij kartę **na kanban** (utworzy zadanie z linkiem) lub **do koszyka**, albo użyj przycisków.
-- Bez klucza API AI działa w trybie demo; po wklejeniu klucza w Ustawieniach (admin) — pełna moc.
+- Bez klucza API AI działa w trybie demo; po wklejeniu klucza OpenAI lub DeepSeek w Ustawieniach (admin) — pełna moc.
 
 ## 6. Powiadomienia
 
