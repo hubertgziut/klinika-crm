@@ -1,0 +1,404 @@
+<!doctype html><html lang="pl"><head><meta charset="utf-8"><title>Wariant 2 · Nocny (Linear/Slack)</title><style>
+:root{--bg:#0b0e13;--sidebar:#0e1218;--panel:#141a23;--border:#222a36;--text:#e7ebf2;--muted:#8b93a3;--accent:#6ea8ff;--accent2:#a78bfa;--accent-soft:rgba(110,168,255,.13);--accent-text:#a9c9ff;--radius:8px;--shadow:0 0 0 1px rgba(255,255,255,.03), 0 8px 24px rgba(0,0,0,.35);--base:12.5px;--card:#141a23;--card-border:#222a36;--col-bg:#0f141c;--active-bg:rgba(110,168,255,.14);--badge-bg:rgba(110,168,255,.2);--badge-text:#c9ddff;--topbar-bg:#0b0e13;--own-bubble:#6ea8ff;--own-text:#0b1020}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:var(--base);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:238px;flex:0 0 238px;background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:16px 10px 12px}
+.logo{display:flex;align-items:center;gap:10px;padding:2px 10px 18px;font-weight:700;font-size:15px;letter-spacing:-.01em}
+.logo .glyph{width:28px;height:28px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;box-shadow:var(--shadow)}
+nav{display:flex;flex-direction:column;gap:1px;flex:1;overflow:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius);color:var(--muted);font-weight:500;white-space:nowrap}
+.nav-item svg{width:16px;height:16px;flex:0 0 16px}
+.nav-item.active{background:var(--active-bg);color:var(--text)}
+.nav-item .badge{margin-left:auto;background:var(--badge-bg);color:var(--badge-text);font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:99px}
+.nav-item .badge.warn{background:#fef3c7;color:#b45309}
+.nav-item.ai-item{margin-top:4px;color:var(--accent-text)}
+.nav-item.ai-item svg{color:var(--accent)}
+.nav-sep{margin:14px 10px 6px;font-size:10.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.nav-links{margin-top:12px;display:flex;flex-direction:column;gap:1px;padding-top:12px;border-top:1px solid var(--border)}
+.nav-links .nav-item{font-weight:400;font-size:12.5px}
+.user{display:flex;align-items:center;gap:10px;padding:10px;border-top:1px solid var(--border);margin-top:8px}
+.user .meta{flex:1;min-width:0}
+.user .meta b{display:block;font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user .meta span{font-size:11px;color:var(--muted)}
+.user svg{color:var(--muted);width:14px;height:14px}
+.av{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;color:#fff;font-weight:600;letter-spacing:.02em;flex:0 0 auto}
+.avstack{display:inline-flex;align-items:center}
+.avstack .av,.avstack .more{margin-left:-6px;border:2px solid var(--card)}
+.avstack.sm .av{border-width:1.5px}
+.av.more{background:var(--col-bg);color:var(--muted);font-size:10px;font-weight:600}
+.main{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg)}
+.topbar{height:58px;flex:0 0 58px;display:flex;align-items:center;gap:12px;padding:0 22px;border-bottom:1px solid var(--border);background:var(--topbar-bg)}
+.topbar h1{font-size:17px;font-weight:700;letter-spacing:-.01em}
+.crumb{color:var(--muted);font-size:12.5px}
+.search{flex:1;max-width:320px;display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:7px 12px;color:var(--muted);font-size:12.5px}
+.search svg{width:14px;height:14px;flex:0 0 14px}
+.spacer{flex:1}
+.tb-right{display:flex;align-items:center;gap:14px}
+.bell{position:relative;color:var(--muted);display:flex}
+.bell svg{width:17px;height:17px}
+.bell i{position:absolute;top:1px;right:1px;width:7px;height:7px;border-radius:50%;background:#ef4444;border:1.5px solid var(--topbar-bg)}
+.btn{display:inline-flex;align-items:center;gap:7px;border:none;cursor:pointer;font-weight:600;font-size:12.5px;border-radius:var(--radius);padding:8px 14px;background:var(--col-bg);color:var(--text);font-family:inherit}
+.btn svg{width:14px;height:14px}
+.btn.accent{background:var(--accent);color:#fff}
+.btn.small{padding:5px 10px;font-size:11.5px;font-weight:600}
+.btn.small svg{width:12px;height:12px}
+.btn.block{width:100%;justify-content:center;padding:9px}
+.content{padding:18px 22px 22px;overflow:auto;display:flex;flex-direction:column;gap:16px;flex:1}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.stat{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 16px}
+.st-row{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:12px;font-weight:500}
+.st-row svg{width:13px;height:13px}
+.st-val{font-size:26px;font-weight:700;letter-spacing:-.02em;margin-top:6px}
+.st-sub{font-size:11.5px;color:var(--muted);margin-top:2px}
+.sbar{height:5px;border-radius:99px;background:var(--col-bg);margin-top:9px;overflow:hidden}
+.sbar i{display:block;height:100%;border-radius:99px}
+.grid{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start;flex:1;min-height:0}
+.board{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;display:flex;flex-direction:column;gap:12px;min-height:0}
+.bhead{display:flex;align-items:center;gap:10px}
+.bhead h2{font-size:14px;font-weight:700}
+.bhead .sub{color:var(--muted);font-size:11.5px}
+.bhead .view{margin-left:auto;display:flex;gap:2px;background:var(--col-bg);border-radius:var(--radius);padding:2px}
+.bhead .view span{display:flex;align-items:center;justify-content:center;width:26px;height:24px;border-radius:6px;color:var(--muted)}
+.bhead .view span.on{background:var(--card);color:var(--accent-text);box-shadow:var(--shadow)}
+.bhead .view svg{width:13px;height:13px}
+.cols{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;flex:1;min-height:0}
+.col{background:var(--col-bg);border-radius:var(--radius);padding:10px;display:flex;flex-direction:column;gap:8px;overflow:hidden}
+.col-h{display:flex;align-items:center;gap:6px;font-size:12px;padding:2px 2px 6px}
+.col-h .dot{width:8px;height:8px;border-radius:50%}
+.col-h b{font-weight:600}
+.col-h .cnt{color:var(--muted);font-size:11px;font-weight:600}
+.col-h .col-add{margin-left:auto;color:var(--muted);font-size:14px}
+.card{background:var(--card);border:1px solid var(--card-border);border-radius:calc(var(--radius) - 2px);box-shadow:var(--shadow);padding:10px 11px;display:flex;flex-direction:column;gap:7px}
+.card.done{opacity:.6}
+.card.done .c-title{text-decoration:line-through}
+.c-title{font-size:12.5px;font-weight:600;line-height:1.35}
+.c-price{font-weight:700;font-size:13px;color:var(--accent-text)}
+.c-sup{display:flex;align-items:center;gap:4px;color:var(--muted);font-size:11px}
+.c-sup svg{width:11px;height:11px}
+.c-tags{display:flex;gap:5px}
+.tag{font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:99px}
+.c-foot{display:flex;align-items:center;justify-content:space-between;margin-top:2px}
+.due{display:inline-flex;align-items:center;gap:4px;color:var(--muted);font-size:10.5px}
+.due svg{width:11px;height:11px}
+.rcol-wrap{display:flex;flex-direction:column;gap:16px;min-height:0}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.phead{display:flex;align-items:center;gap:8px;font-weight:700;font-size:13px}
+.phead svg{width:14px;height:14px;color:var(--accent-text);flex:0 0 14px}
+.phead.ai svg{color:var(--accent)}
+.live{margin-left:auto;display:inline-flex;align-items:center;gap:5px;color:#10b981;font-size:11px;font-weight:600}
+.live i{width:7px;height:7px;border-radius:50%;background:#10b981;display:inline-block}
+.chan{font-size:11px;font-weight:600;color:var(--accent-text);background:var(--accent-soft);padding:3px 10px;border-radius:99px;align-self:flex-start}
+.msgs{display:flex;flex-direction:column;gap:10px;flex:1;overflow:hidden}
+.msg{display:flex;gap:8px;align-items:flex-start}
+.msg.me{justify-content:flex-end}
+.m-body{display:flex;flex-direction:column;gap:3px;max-width:88%;align-items:flex-start}
+.msg.me .m-body{align-items:flex-end}
+.m-name{font-size:11px;font-weight:600}
+.m-name span{color:var(--muted);font-weight:400;margin-left:5px}
+.bubble{background:var(--col-bg);border:1px solid var(--card-border);border-radius:12px 12px 12px 4px;padding:7px 11px;font-size:12px;line-height:1.4}
+.msg.me .bubble{background:var(--own-bubble);color:var(--own-text);border:none;border-radius:12px 12px 4px 12px}
+.chat-input{margin-top:2px;display:flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:var(--radius);padding:7px 10px;color:var(--muted);font-size:12px}
+.chat-input svg{width:13px;height:13px;flex:0 0 13px}
+.chat-input svg:last-child{margin-left:auto;color:var(--accent)}
+.chip{margin-left:auto;font-size:10px;font-weight:700;color:var(--accent-text);background:var(--accent-soft);padding:2px 8px;border-radius:99px}
+.aimsg{display:flex;flex-direction:column;gap:9px}
+.airow{display:flex;flex-direction:column;gap:2px}
+.aiuser{font-size:10px;font-weight:700;color:var(--muted)}
+.aiq{font-size:12px;background:var(--col-bg);border-radius:10px;padding:6px 9px;line-height:1.35}
+.airesult{border:1px dashed var(--accent);background:var(--accent-soft);border-radius:var(--radius);padding:9px 10px;display:flex;flex-direction:column;gap:6px}
+.res-head{display:flex;align-items:center;gap:5px;font-size:12px}
+.res-head svg{width:11px;height:11px;color:var(--muted);flex:0 0 11px}
+.res-head .rating{margin-left:auto;font-size:10.5px;color:#b45309}
+.res-meta{font-size:11px;color:var(--muted)}
+.res-meta .link{color:var(--accent-text);font-weight:600}
+.res-actions{display:flex;gap:6px;flex-wrap:wrap}
+.res-hint{margin-top:2px;font-size:10px;color:var(--muted);display:flex;align-items:center;gap:4px}
+.res-hint svg{width:10px;height:10px}
+.aithink{font-size:11px;color:var(--muted);font-style:italic;display:flex;align-items:center;gap:6px}
+.aithink::before{content:"";width:10px;height:10px;border-radius:50%;border:2px solid var(--accent);border-top-color:transparent;display:inline-block;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.aiinput{display:flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:var(--radius);padding:7px 10px;color:var(--muted);font-size:12px;margin-top:auto}
+.aiinput svg:first-child{width:13px;height:13px;color:var(--accent);flex:0 0 13px}
+.aiinput span{flex:1}
+.cartitems{display:flex;flex-direction:column;gap:9px}
+.cartitem{display:flex;gap:9px;align-items:flex-start;font-size:12px;line-height:1.3}
+.cartitem b{font-weight:600}
+.ci-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);margin-top:4px;flex:0 0 auto}
+.ci-sub{color:var(--muted);font-size:11px;margin-top:1px}
+.ci-sub .link{color:var(--accent-text);font-weight:600}
+.carttotal{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);padding-top:9px;font-size:12.5px}
+.carttotal b{font-size:15px}
+</style></head><body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo"><span class="glyph">◆</span>Klinika CRM</div>
+    <nav>
+    <div class="nav-item active ">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg><span>Pulpit</span>
+    </div>
+    <div class="nav-item  ">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><span>Projekty</span>
+    </div>
+    <div class="nav-item  ">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/><path d="M9 11l3 3L22 4"/></svg><span>Zadania</span><span class="badge ">12</span>
+    </div>
+    <div class="nav-item  ">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Komunikator</span><span class="badge ">5</span>
+    </div>
+    <div class="nav-item  ">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg><span>Tabele</span>
+    </div>
+    <div class="nav-item  ">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8"/></svg><span>Dokumenty</span>
+    </div>
+    <div class="nav-item  ">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05"/><path d="M12 22.08V12"/></svg><span>Inwentarz</span><span class="badge warn">niski stan</span>
+    </div>
+    <div class="nav-item  ">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg><span>Koszyki</span><span class="badge ">3</span>
+    </div>
+    <div class="nav-item  ai-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M12 3l1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg><span>Asystent AI</span>
+    </div>
+      <div class="nav-sep">Przestrzeń</div>
+      <div class="nav-links">
+        <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Ustawienia</div>
+        <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Powiadomienia e-mail</div>
+      </div>
+    </nav>
+    <div class="user"><span class="av" style="width:30px;height:30px;font-size:12px;background:#6366f1">AK</span><div class="meta"><b>Anna Kowalska</b><span>Administrator</span></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <h1>Pulpit</h1><span class="crumb">/ Projekty / Zakupy kliniki</span>
+      <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><span>Szukaj zadań, projektów, produktów…</span></div>
+      <div class="spacer"></div>
+      <div class="tb-right">
+        <span class="bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><i></i></span>
+        <span class="avstack"><span style="z-index:3"><span class="av" style="width:22px;height:22px;font-size:9px;background:#6366f1">AK</span></span><span style="z-index:2"><span class="av" style="width:22px;height:22px;font-size:9px;background:#0ea5e9">MW</span></span><span style="z-index:1"><span class="av" style="width:22px;height:22px;font-size:9px;background:#f59e0b">OZ</span></span><span class="av more">+4</span></span>
+        <button class="btn accent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M12 5v14M5 12h14"/></svg> Nowy projekt</button>
+      </div>
+    </div>
+    <div class="content">
+      <div class="stats">
+    <div class="stat">
+      <div class="st-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/><path d="M9 11l3 3L22 4"/></svg><span>Otwarte zadania</span></div>
+      <div class="st-val">42</div>
+      <div class="st-sub">+8 w tym tygodniu</div>
+      
+    </div>
+    <div class="stat">
+      <div class="st-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><span>Aktywne projekty</span></div>
+      <div class="st-val">7</div>
+      <div class="st-sub">3 z gałęziami</div>
+      
+    </div>
+    <div class="stat">
+      <div class="st-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg><span>Koszyki zakupowe</span></div>
+      <div class="st-val">3</div>
+      <div class="st-sub">wartość 4 320 zł</div>
+      
+    </div>
+    <div class="stat">
+      <div class="st-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05"/><path d="M12 22.08V12"/></svg><span>Poziom inwentarza</span></div>
+      <div class="st-val">78%</div>
+      <div class="st-sub">6 pozycji do uzupełnienia</div>
+      <div class="sbar"><i style="width:78%;background:#6ea8ff"></i></div>
+    </div></div>
+      <div class="grid">
+        <div class="board">
+          <div class="bhead"><h2>Tablica zadań</h2><span class="sub">4 kolumny · 12 zadań</span>
+            <div class="view"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg></span><span class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg></span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05"/><path d="M12 22.08V12"/></svg></span></div>
+          </div>
+          <div class="cols">
+    <div class="col">
+      <div class="col-h"><span class="dot" style="background:#f87171"></span><b>Do zrobienia</b><span class="cnt">4</span><span class="col-add">+</span></div>
+      
+        <div class="card">
+          <div class="c-title">Wynegocjować rabat u hurtowni MedPlus</div>
+          
+          <div class="c-tags"><span class="tag" style="color:#f59e0b;background:#f59e0b1a">Zakupy</span></div>
+          <div class="c-foot">
+            <span class="avstack sm"><span class="av" style="width:20px;height:20px;font-size:8px;background:#6366f1">AK</span><span class="av" style="width:20px;height:20px;font-size:8px;background:#0ea5e9">MW</span></span>
+            <span class="due"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> jutro</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="c-title">Zaplanować dostawę pralki do pralni</div>
+          
+          <div class="c-tags"><span class="tag" style="color:#0ea5e9;background:#0ea5e91a">Logistyka</span></div>
+          <div class="c-foot">
+            <span class="avstack sm"><span class="av" style="width:20px;height:20px;font-size:8px;background:#0ea5e9">MW</span></span>
+            <span class="due"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> pt.</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="c-title">Zaktualizować cennik usług</div>
+          
+          <div class="c-tags"><span class="tag" style="color:#8b5cf6;background:#8b5cf61a">Dokumenty</span></div>
+          <div class="c-foot">
+            <span class="avstack sm"><span class="av" style="width:20px;height:20px;font-size:8px;background:#f59e0b">OZ</span></span>
+            <span class="due"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> 22.07</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="c-title">Zapytanie ofertowe do 3 dostawców</div>
+          
+          <div class="c-tags"><span class="tag" style="color:#f59e0b;background:#f59e0b1a">Zakupy</span></div>
+          <div class="c-foot">
+            <span class="avstack sm"><span class="av" style="width:20px;height:20px;font-size:8px;background:#6366f1">AK</span><span class="av" style="width:20px;height:20px;font-size:8px;background:#10b981">PT</span></span>
+            <span class="due"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> 24.07</span>
+          </div>
+        </div>
+    </div>
+    <div class="col">
+      <div class="col-h"><span class="dot" style="background:#f59e0b"></span><b>W trakcie</b><span class="cnt">3</span><span class="col-add">+</span></div>
+      
+        <div class="card">
+          <div class="c-title">Zamówienie #14 — środki dezynfekcyjne</div>
+          
+          <div class="c-tags"><span class="tag" style="color:#10b981;background:#10b9811a">Zamówienia</span></div>
+          <div class="c-foot">
+            <span class="avstack sm"><span class="av" style="width:20px;height:20px;font-size:8px;background:#f59e0b">OZ</span></span>
+            <span class="due"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> dzisiaj</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="c-title">Projekt: aranżacja nowej recepcji</div>
+          
+          <div class="c-tags"><span class="tag" style="color:#6366f1;background:#6366f11a">Projekt</span></div>
+          <div class="c-foot">
+            <span class="avstack sm"><span class="av" style="width:20px;height:20px;font-size:8px;background:#6366f1">AK</span><span class="av" style="width:20px;height:20px;font-size:8px;background:#0ea5e9">MW</span><span class="av" style="width:20px;height:20px;font-size:8px;background:#f59e0b">OZ</span></span>
+            <span class="due"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> sierpień</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="c-title">Migracja dokumentów do bazy</div>
+          
+          <div class="c-tags"><span class="tag" style="color:#8b5cf6;background:#8b5cf61a">Dokumenty</span></div>
+          <div class="c-foot">
+            <span class="avstack sm"><span class="av" style="width:20px;height:20px;font-size:8px;background:#10b981">PT</span></span>
+            <span class="due"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> 28.07</span>
+          </div>
+        </div>
+    </div>
+    <div class="col">
+      <div class="col-h"><span class="dot" style="background:#0ea5e9"></span><b>Do weryfikacji</b><span class="cnt">2</span><span class="col-add">+</span></div>
+      
+        <div class="card">
+          <div class="c-title">Koszyk #3 — sprzęt AGD do pralni</div>
+          
+          <div class="c-tags"><span class="tag" style="color:#ec4899;background:#ec48991a">Koszyk</span></div>
+          <div class="c-foot">
+            <span class="avstack sm"><span class="av" style="width:20px;height:20px;font-size:8px;background:#6366f1">AK</span></span>
+            <span class="due"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> środa</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="c-title">Harmonogram dyżurów III kwartału</div>
+          
+          <div class="c-tags"><span class="tag" style="color:#14b8a6;background:#14b8a61a">Zespół</span></div>
+          <div class="c-foot">
+            <span class="avstack sm"><span class="av" style="width:20px;height:20px;font-size:8px;background:#0ea5e9">MW</span><span class="av" style="width:20px;height:20px;font-size:8px;background:#f59e0b">OZ</span></span>
+            <span class="due"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> 26.07</span>
+          </div>
+        </div>
+    </div>
+    <div class="col">
+      <div class="col-h"><span class="dot" style="background:#10b981"></span><b>Zrobione</b><span class="cnt">3</span><span class="col-add">+</span></div>
+      
+        <div class="card done">
+          <div class="c-title">Audyt inwentarza — lipiec</div>
+          
+          <div class="c-tags"><span class="tag" style="color:#10b981;background:#10b9811a">Inwentarz</span></div>
+          <div class="c-foot">
+            <span class="avstack sm"><span class="av" style="width:20px;height:20px;font-size:8px;background:#10b981">PT</span></span>
+            
+          </div>
+        </div>
+        <div class="card done">
+          <div class="c-title">Nowe logo kliniki</div>
+          
+          <div class="c-tags"><span class="tag" style="color:#ec4899;background:#ec48991a">Marketing</span></div>
+          <div class="c-foot">
+            <span class="avstack sm"><span class="av" style="width:20px;height:20px;font-size:8px;background:#f59e0b">OZ</span></span>
+            
+          </div>
+        </div>
+        <div class="card done">
+          <div class="c-title">Konfiguracja poczty zespołu</div>
+          
+          <div class="c-tags"><span class="tag" style="color:#6366f1;background:#6366f11a">IT</span></div>
+          <div class="c-foot">
+            <span class="avstack sm"><span class="av" style="width:20px;height:20px;font-size:8px;background:#0ea5e9">MW</span></span>
+            
+          </div>
+        </div>
+    </div></div>
+        </div>
+        <div class="rcol-wrap">
+    <div class="panel rcol" style="flex:1.4">
+      <div class="phead"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Komunikator <span class="live"><i></i>na żywo</span></div>
+      <span class="chan"># ogólny</span>
+      <div class="msgs">
+        
+          <div class="msg ">
+            <span class="av" style="width:24px;height:24px;font-size:10px;background:#6366f1">AK</span>
+            <div class="m-body">
+              <div class="m-name">Anna Kowalska <span>09:12</span></div>
+              <div class="bubble">Hej! Kto może jutro rano odebrać zamówienie z hurtowni? 🚚</div>
+            </div>
+          </div>
+          <div class="msg ">
+            <span class="av" style="width:24px;height:24px;font-size:10px;background:#0ea5e9">MW</span>
+            <div class="m-body">
+              <div class="m-name">Marek Wrona <span>09:14</span></div>
+              <div class="bubble">Ja mogę — i tak jadę w tamtą stronę, koło MedPlusu.</div>
+            </div>
+          </div>
+          <div class="msg ">
+            <span class="av" style="width:24px;height:24px;font-size:10px;background:#f59e0b">OZ</span>
+            <div class="m-body">
+              <div class="m-name">Ola Zając <span>09:20</span></div>
+              <div class="bubble">Super! Wrzuciłam fakturę #212 do dokumentów 📄</div>
+            </div>
+          </div>
+          <div class="msg me">
+            
+            <div class="m-body">
+              
+              <div class="bubble">Dzięki! Sprawdzę i zamknę zadanie w projektach.</div>
+            </div>
+          </div>
+          <div class="msg ">
+            <span class="av" style="width:24px;height:24px;font-size:10px;background:#10b981">PT</span>
+            <div class="m-body">
+              <div class="m-name">Piotr Tkacz <span>09:24</span></div>
+              <div class="bubble">Przypominam: w piątek audyt inwentarza, zapiszcie się na listę ✅</div>
+            </div>
+          </div>
+      </div>
+      <div class="chat-input"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M12 5v14M5 12h14"/></svg><span>Napisz do zespołu…</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></div>
+    </div><div class="panel rcol">
+  <div class="phead ai"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M12 3l1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg> Asystent AI <span class="chip">OpenAI</span></div>
+  <div class="aimsg">
+    <div class="airow"><span class="aiuser">● AI</span><span class="aiq">„Znajdź pralkę do pralni do 3 000 zł”</span></div>
+    <div class="airesult">
+      <div class="res-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M9 5h.01M9 12h.01M9 19h.01M15 5h.01M15 12h.01M15 19h.01"/></svg> <b>Pralka Bosch WGB2440XPL</b> <span class="rating">⭐ 4,6/5</span></div>
+      <div class="res-meta">2 899 zł · MediaExpert · <span class="link">link do oferty <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span></div>
+      <div class="res-actions">
+        <button class="btn small"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/><path d="M9 11l3 3L22 4"/></svg> Przenieś do zadań</button>
+        <button class="btn small accent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg> Dodaj do koszyka</button>
+      </div>
+      <div class="res-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px"><path d="M9 5h.01M9 12h.01M9 19h.01M15 5h.01M15 12h.01M15 19h.01"/></svg> Przeciągnij wynik na tablicę, aby utworzyć zadanie</div>
+    </div>
+    <div class="airow"><span class="aiuser">Ty</span><span class="aiq">Porównaj z LG F4WV510PS</span></div>
+    <div class="aithink">analizuję dostępne oferty…</div>
+  </div>
+  <div class="aiinput"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M12 3l1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg><span>Zapytaj asystenta…</span><button class="btn small accent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg></button></div></div></div>
+      </div>
+    </div>
+  </main>
+</div>
+</body></html>
