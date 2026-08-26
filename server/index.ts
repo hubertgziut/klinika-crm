@@ -20,6 +20,10 @@ import { notificationsRouter } from "./routes/notifications";
 import { aiRouter } from "./routes/ai";
 import { initWs } from "./ws";
 import { startMailWorker } from "./mailer";
+import { calendarRouter, startCalendarWorker } from "./routes/calendar";
+import { mailRouter } from "./routes/mail";
+import { startMailboxWorker } from "./mailbox";
+import { whatsappRouter, startWhatsappForwarder } from "./routes/whatsapp";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 initDb();
@@ -46,6 +50,9 @@ app.use("/api/auth", authRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/settings", settingsRouter);
 app.use("/api/search", searchRouter);
+app.use("/api/calendar", calendarRouter);
+app.use("/api/mail", mailRouter);
+app.use("/api/whatsapp", whatsappRouter);
 app.use("/api/projects", projectsRouter);
 app.use("/api/branches", branchesRouter);
 app.use("/api/projects", projectTasksRouter);
@@ -80,6 +87,9 @@ app.get("*", (_req, res) => {
 const server = http.createServer(app);
 initWs(server);
 startMailWorker();
+startCalendarWorker();
+startMailboxWorker();
+startWhatsappForwarder();
 
 const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || "0.0.0.0";

@@ -20,7 +20,9 @@ interface AppState {
   unread: number;
   presence: Record<string, boolean>;
   unreadCount: number;
+  mailUnread: number;
   channels: Channel[];
+  refreshMailUnread: () => Promise<void>;
   boot: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -40,7 +42,15 @@ export const useApp = create<AppState>((set, get) => ({
   unread: 0,
   presence: {},
   unreadCount: 0,
+  mailUnread: 0,
   channels: [],
+
+  refreshMailUnread: async () => {
+    try {
+      const d = await api.get<{ unread: number }>("/api/mail/unread");
+      set({ mailUnread: d.unread });
+    } catch { /* IMAP nieskonfigurowane */ }
+  },
 
   boot: async () => {
     try {
@@ -48,6 +58,7 @@ export const useApp = create<AppState>((set, get) => ({
       set({ user, token, booted: true });
       get().refreshNotifications();
       get().refreshChannels();
+      get().refreshMailUnread();
     } catch {
       set({ booted: true });
     }
@@ -58,11 +69,12 @@ export const useApp = create<AppState>((set, get) => ({
     set({ user, token });
     get().refreshNotifications();
     get().refreshChannels();
+    get().refreshMailUnread();
   },
 
   logout: async () => {
     try { await api.post("/api/auth/logout"); } catch { /* ignore */ }
-    set({ user: null, token: null, presence: {}, channels: [], unreadCount: 0 });
+    set({ user: null, token: null, presence: {}, channels: [], unreadCount: 0, mailUnread: 0 });
   },
 
   setUser: (u) => set({ user: u }),

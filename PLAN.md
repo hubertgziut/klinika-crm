@@ -306,3 +306,60 @@ CRM_clinic/
 ---
 
 *MVP zbudowane i zweryfikowane. Kolejny krok: uruchomienie (README.md) i konfiguracja SMTP/OpenAI przez admina.*
+
+
+---
+
+# PLAN — Moduły v2 (kalendarz, powiadomienia, poczta, WhatsApp, AI-centrum, panel AI + Whisper)
+
+> Status: **zaplanowane — w realizacji** · Zakres: rozszerzenie MVP (Fazy 0–10 ukończone)
+
+## V2.1 — Kalendarz + powiadomienia o wizytach/zdarzeniach
+- **Tabela** `calendar_events`: id, title, type (dyżur|spotkanie|wizyta|zadanie|zamówienie|inne),
+  start_at, end_at, all_day, location, notes, project_id (nullable), created_by, created_at, updated_at.
+- **Tabela** `calendar_participants`: event_id, user_id, notify_minutes (5|15|30|60|1440), reminded_at.
+- **API**: GET /api/calendar?from=&to= · GET /api/calendar/upcoming (najbliższe 14 dni) ·
+  POST/PATCH/DELETE /api/calendar/:id · POST /api/calendar/:id/participants.
+- **Powiadomienia**: worker co 60 s — wydarzenia zaczynające się za notify_minutes minut
+  → powiadomienie in-app (dzwonek) + e-mail (kolejka SMTP) do uczestników; oznaczanie reminded_at.
+- **UI**: /kalendarz — widok miesiąca (siatka, kolory wg typu), lista nadchodzących,
+  modal tworzenia/edycji (tytuł, typ, daty, uczestnicy, przypomnienie, lokalizacja, notatki).
+
+## V2.2 — Integracja ze skrzynkami e-mail (IMAP)
+- **Ustawienia IMAP** (admin): host, port, user, pass, TLS + istniejący SMTP (wysyłka).
+- **Backend** (`imapflow`): worker co 60 s pobiera INBOX → tabela `emails`
+  (uid, folder, from, to, subject, body_text, body_html, date, seen, message_id);
+  załączniki → uploads. Endpointy: GET /api/mail (folder, stronicowanie) · GET /api/mail/:id ·
+  POST /api/mail/:id/seen · GET /api/mail/unread · POST /api/mail/send (kompozytor przez SMTP) ·
+  POST /api/mail/:id/task (utwórz zadanie z maila).
+- **UI**: /poczta — lista, podgląd, odpowiedź/nowa, badge nieprzeczytanych, „utwórz zadanie z maila”.
+- Bez skonfigurowanego IMAP moduł pokazuje stan „nieskonfigurowane” (bez błędów).
+
+## V2.3 — WhatsApp (integracja przez mostek WhatsApp Web)
+- **Mostek** (istniejący, Baileys): /Users/hubert/.hermes/hermes-agent/scripts/whatsapp-bridge
+  (API: POST /send {chatId, message}, GET /health, GET /messages long-poll, GET /chat/:id).
+- **Ustawienia**: adres mostka (domyślnie http://127.0.0.1:3001) + status połączenia.
+- **Integracja**: wysyłka z CRM (formularz numer+w treść), odbieranie → powiadomienia
+  (long-poll /messages), AI tool send_whatsapp. Instrukcja uruchomienia mostka i logowania QR.
+- Bez działającego mostka — moduł pokazuje status offline (bez błędów).
+
+## V2.4 — DeepSeek jako „centrum dowodzenia” (agentic)
+- Rozszerzenie narzędzi AI (function calling): create_task, create_event (kalendarz),
+  list_calendar, send_email (kompozytor), get_inbox_summary, send_whatsapp,
+  get_low_stock, get_orders, get_summary (istnieje). AI może zarządzać wszystkimi modułami
+  przez czat (DeepSeek v4 flash / OpenAI).
+
+## V2.5 — Panel AI po prawej (styl mobilnego ChatGPT) + mikrofon (Whisper lokalnie)
+- **Layout**: lewy sidebar (menu) · środek (pole robocze) · prawy panel AI (stały, zwijany ~380 px).
+- **Panel**: nagłówek „Asystent AI”, przełącznik wątków/nowy wątek, bąbelki jak w ChatGPT,
+  input na dole z przyciskiem mikrofonu 🎤 i wysyłką; **pod inputem selektor LLM**
+  (DeepSeek v4 flash / OpenAI / tryb demo — z /api/ai/status).
+- **Mikrofon**: MediaRecorder (webm) → POST /api/ai/transcribe → serwer: ffmpeg → 16 kHz wav →
+  `whisper-cli -m ggml-large-v3.bin` (ścieżka z Ustawień, domyślnie
+  /Users/hubert/Library/Application Support/Hermes Control/Models/Whisper/ggml-large-v3.bin, język pl)
+  → tekst do pola czatu.
+- **API**: POST /api/ai/transcribe (multipart audio) · GET /api/ai/status (istnieje) rozszerzony.
+
+## V2.6 — Weryfikacja i uruchomienie
+- typecheck + build + testy API (kalendarz, poczta, transcribe, narzędzia AI, WhatsApp status),
+- uruchomienie serwera (port 3030) do testów użytkownika + opcjonalny tunel.

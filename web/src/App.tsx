@@ -7,6 +7,9 @@ import Shell from "./layout/Shell";
 import Dashboard from "./pages/Dashboard";
 import Placeholder from "./pages/Placeholder";
 import Settings from "./pages/Settings";
+import CalendarPage from "./pages/Calendar";
+import Mail from "./pages/Mail";
+import WhatsApp from "./pages/WhatsApp";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import Tasks from "./pages/Tasks";
@@ -53,6 +56,9 @@ export default function App() {
         <Route path="/projekty" element={<Projects />} />
         <Route path="/projekty/:id" element={<ProjectDetail />} />
         <Route path="/zadania" element={<Tasks />} />
+        <Route path="/kalendarz" element={<CalendarPage />} />
+        <Route path="/poczta" element={<Mail />} />
+        <Route path="/whatsapp" element={<WhatsApp />} />
         <Route path="/komunikator" element={<Suspense fallback={<PageLoader />}><Chat /></Suspense>} />
         <Route path="/tabele" element={<Tables />} />
         <Route path="/tabele/:id" element={<Suspense fallback={<PageLoader />}><TablePage /></Suspense>} />

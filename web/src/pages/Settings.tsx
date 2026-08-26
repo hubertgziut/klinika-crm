@@ -8,6 +8,8 @@ interface AdminSettings {
   smtp_host: string; smtp_port: string; smtp_user: string; smtp_secure: string; smtp_from: string;
   smtp_pass: string; openai_key: string; search_api_key: string; app_url: string;
   ai_provider: string; deepseek_key: string; deepseek_model: string;
+  whisper_model_path: string; whisper_bin: string; whatsapp_bridge_url: string;
+  imap_host: string; imap_port: string; imap_user: string; imap_pass: string; imap_secure: string;
 }
 
 interface AiStatus { demo: boolean; provider: "openai" | "deepseek" | "demo"; model: string | null }
@@ -43,6 +45,9 @@ const EMPTY: AdminSettings = {
   smtp_host: "", smtp_port: "587", smtp_user: "", smtp_secure: "false", smtp_from: "",
   smtp_pass: "", openai_key: "", search_api_key: "", app_url: "",
   ai_provider: "auto", deepseek_key: "", deepseek_model: "deepseek-v4-flash",
+  whisper_model_path: "/Users/hubert/Library/Application Support/Hermes Control/Models/Whisper/ggml-large-v3.bin",
+  whisper_bin: "whisper-cli", whatsapp_bridge_url: "http://127.0.0.1:3001",
+  imap_host: "", imap_port: "993", imap_user: "", imap_pass: "", imap_secure: "true",
 };
 
 const ROLE_LABEL: Record<AccountUser["role"], string> = {
@@ -499,6 +504,51 @@ export default function Settings() {
                   : <>✅ Aktywny dostawca: <b>{aiStatus.provider === "deepseek" ? "DeepSeek (" + (aiStatus.model || "—") + ")" : "OpenAI (" + (aiStatus.model || "—") + ")"}</b></>}
               </div>
             )}
+          </div>
+
+          <div className="panel" style={{ marginBottom: 16 }}>
+            <div className="panel-title">🎤 Transkrypcja głosu (lokalne Whisper)
+              <span className="spacer" />
+              <span className="badge green">100% lokalnie</span>
+            </div>
+            <label className="field">Ścieżka do modelu (ggml)
+              <input className="input" value={form.whisper_model_path} onChange={(e) => set("whisper_model_path", e.target.value)} />
+            </label>
+            <label className="field" style={{ marginTop: 10 }}>Binarka whisper-cli
+              <input className="input" value={form.whisper_bin} onChange={(e) => set("whisper_bin", e.target.value)} />
+            </label>
+            <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 8 }}>Mikrofon 🎤 w panelu Asystenta AI transkrybuje głos przez Whisper v3 large zainstalowane lokalnie — nic nie wychodzi z komputera.</p>
+          </div>
+
+          <div className="panel" style={{ marginBottom: 16 }}>
+            <div className="panel-title">💬 WhatsApp (mostek WhatsApp Web)
+              <span className="spacer" />
+              <span className="badge blue">Baileys</span>
+            </div>
+            <label className="field">Adres mostka
+              <input className="input" value={form.whatsapp_bridge_url} onChange={(e) => set("whatsapp_bridge_url", e.target.value)} placeholder="http://127.0.0.1:3001" />
+            </label>
+            <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 8 }}>
+              Mostek uruchamiasz osobno (katalog ~/.hermes/hermes-agent/scripts/whatsapp-bridge, port 3001):
+              <code style={{ display: "block", marginTop: 4, background: "var(--sidebar-bg)", padding: "6px 10px", borderRadius: 8 }}>node bridge.js --port 3001</code>
+              Przy pierwszym starcie zaloguj się kodem QR (WhatsApp Web). Po zalogowaniu CRM może wysyłać wiadomości (także przez AI).
+            </p>
+          </div>
+
+          <div className="panel" style={{ marginBottom: 16 }}>
+            <div className="panel-title">📧 Skrzynka e-mail (IMAP)
+              <span className="spacer" />
+              <span className="badge green">czytanie + wysyłka</span>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <label className="field">Host IMAP<input className="input" value={form.imap_host} onChange={(e) => set("imap_host", e.target.value)} placeholder="imap.example.com" /></label>
+              <label className="field">Port<input className="input" value={form.imap_port} onChange={(e) => set("imap_port", e.target.value)} /></label>
+              <label className="field">Użytkownik<input className="input" value={form.imap_user} onChange={(e) => set("imap_user", e.target.value)} /></label>
+              <label className="field">Hasło<input className="input" type="password" value={form.imap_pass} onChange={(e) => set("imap_pass", e.target.value)} placeholder={form.imap_pass === "***" ? "zapisane" : ""} /></label>
+            </div>
+            <label className="field" style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10 }}>
+              <input type="checkbox" checked={form.imap_secure === "true"} onChange={(e) => set("imap_secure", String(e.target.checked))} /> TLS (bezpieczne połączenie, port 993)
+            </label>
           </div>
 
           <div className="panel" style={{ marginBottom: 16 }}>

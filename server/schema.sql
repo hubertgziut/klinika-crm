@@ -289,3 +289,45 @@ CREATE TABLE IF NOT EXISTS settings (
   value TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS calendar_events (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  type TEXT NOT NULL DEFAULT 'inne',
+  start_at TEXT NOT NULL,
+  end_at TEXT NOT NULL,
+  all_day INTEGER NOT NULL DEFAULT 0,
+  location TEXT DEFAULT '',
+  notes TEXT DEFAULT '',
+  project_id TEXT REFERENCES projects(id) ON DELETE SET NULL,
+  created_by TEXT NOT NULL REFERENCES users(id),
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_calendar_start ON calendar_events(start_at);
+
+CREATE TABLE IF NOT EXISTS calendar_participants (
+  event_id TEXT NOT NULL REFERENCES calendar_events(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  notify_minutes INTEGER NOT NULL DEFAULT 15,
+  reminded_at TEXT,
+  PRIMARY KEY (event_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_cal_part_user ON calendar_participants(user_id);
+
+CREATE TABLE IF NOT EXISTS emails (
+  id TEXT PRIMARY KEY,
+  message_id TEXT UNIQUE,
+  folder TEXT NOT NULL DEFAULT 'INBOX',
+  from_name TEXT DEFAULT '',
+  from_email TEXT DEFAULT '',
+  to_text TEXT DEFAULT '',
+  subject TEXT DEFAULT '',
+  body_text TEXT DEFAULT '',
+  body_html TEXT DEFAULT '',
+  mail_date TEXT,
+  seen INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL,
+  synced_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_emails_folder ON emails(folder, mail_date);

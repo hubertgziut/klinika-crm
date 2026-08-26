@@ -11,8 +11,11 @@ const ADMIN_KEYS = [
   "clinic_name", "clinic_emoji", "smtp_host", "smtp_port", "smtp_user",
   "smtp_secure", "smtp_from", "smtp_pass", "openai_key", "search_api_key",
   "app_url", "ai_provider", "deepseek_key", "deepseek_model",
+  "whisper_model_path", "whisper_bin", "whatsapp_bridge_url",
+  "imap_host", "imap_port", "imap_user", "imap_pass", "imap_secure",
 ];
-const SECRET_KEYS = ["smtp_pass", "openai_key", "search_api_key", "deepseek_key"];
+const SECRET_KEYS = ["smtp_pass", "openai_key", "search_api_key", "deepseek_key", "imap_pass"];
+const DEFAULT_WHISPER = "/Users/hubert/Library/Application Support/Hermes Control/Models/Whisper/ggml-large-v3.bin";
 
 settingsRouter.get("/", (_req, res) => {
   const out: Record<string, string> = {};
@@ -27,7 +30,7 @@ settingsRouter.get("/admin", requireAuth, requireRole("admin"), (_req, res) => {
   const out: Record<string, string> = {};
   for (const k of ADMIN_KEYS) {
     const v = getSetting(k);
-    out[k] = v ?? (k === "smtp_port" ? "587" : "");
+    out[k] = v ?? (k === "smtp_port" ? "587" : k === "imap_port" ? "993" : k === "imap_secure" ? "true" : k === "whisper_model_path" ? DEFAULT_WHISPER : k === "whisper_bin" ? "whisper-cli" : k === "whatsapp_bridge_url" ? "http://127.0.0.1:3001" : "");
   }
   for (const k of SECRET_KEYS) if (out[k]) out[k] = "***";
   res.json(out);

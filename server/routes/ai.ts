@@ -1,22 +1,63 @@
 import { Router } from "express";
 import { z } from "zod";
-import { db } from "../db";
+import multer from "multer";
+import { db, getSetting } from "../db";
 import { newId, nowISO, safeParse } from "../util";
 import { requireAuth } from "../auth";
-import { aiChat, getAiStatus, isDemoMode, organizeData, parseAiContent, SYSTEM_PROMPT } from "../ai";
+import { aiChat, getAiStatus, getDeepSeekModel, getLlmOptions, isDemoMode, organizeData, parseAiContent, SYSTEM_PROMPT } from "../ai";
+import { getWhisperModelPath, transcribeAudio, whisperAvailable } from "../whisper";
+
+const audioUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
 // ===== Faza 6 — Asystent AI: czat, organizacja danych, wątki =====
 export const aiRouter = Router();
 aiRouter.use(requireAuth);
 
-// ===== Który dostawca AI jest aktywny (do panelu ustawień) =====
-aiRouter.get("/status", (_req, res) => {
-  res.json(getAiStatus());
+// ===== Który dostawca AI jest aktywny + Whisper + WhatsApp + lista LLM (selektor) =====
+aiRouter.get("/status", async (_req, res) => {
+  const s = getAiStatus();
+  let whatsapp: { configured: boolean; online: boolean } = { configured: false, online: false };
+  try {
+    const baseUrl = (getSetting("whatsapp_bridge_url") || process.env.WHATSAPP_BRIDGE_URL || "http://127.0.0.1:3001").replace(/\/$/, "");
+    if (baseUrl) {
+      const r = await fetch(baseUrl + "/health", { signal: AbortSignal.timeout(3000) });
+      whatsapp = { configured: true, online: r.ok };
+    }
+  } catch {
+    whatsapp = { configured: true, online: false };
+  }
+  res.json({
+    ...s,
+    whisper: { available: whisperAvailable(), modelPath: getWhisperModelPath() },
+    whatsapp,
+    llmOptions: getLlmOptions(),
+  });
+});
+
+// ===== Transkrypcja głosu — lokalne Whisper (whisper-cli, ggml-large-v3) =====
+aiRouter.post("/transcribe", audioUpload.single("audio"), async (req, res) => {
+  if (!req.file) {
+    res.status(400).json({ error: "Brak pliku audio" });
+    return;
+  }
+  if (!whisperAvailable()) {
+    res.status(400).json({ error: "Model Whisper nie znaleziony — sprawdź ścieżkę w Ustawieniach (Asystent AI)" });
+    return;
+  }
+  try {
+    const ext = (req.file.originalname || "audio.webm").split(".").pop() || "webm";
+    const text = await transcribeAudio(req.file.buffer, ext);
+    res.json({ text });
+  } catch (e: any) {
+    console.error("[whisper] błąd:", e?.message);
+    res.status(500).json({ error: "Błąd transkrypcji: " + (e?.message || "nieznany błąd") });
+  }
 });
 
 const chatSchema = z.object({
   threadId: z.string().min(1).optional(),
   message: z.string().min(1).max(4000),
+  provider: z.enum(["auto", "openai", "deepseek"]).optional().default("auto"),
 });
 const organizeSchema = z.object({
   columns: z.array(z.object({ key: z.string().min(1).max(80), label: z.string().max(200) })).max(50).optional().default([]),
@@ -56,7 +97,7 @@ aiRouter.post("/chat", async (req, res) => {
     res.status(400).json({ error: "Nieprawidłowe dane czatu", details: parsed.error.flatten() });
     return;
   }
-  const { threadId, message } = parsed.data;
+  const { threadId, message, provider } = parsed.data;
   const userId = req.user!.id;
   const t = nowISO();
 
@@ -90,7 +131,7 @@ aiRouter.post("/chat", async (req, res) => {
   // Wywołanie AI (pełny tryb z function calling lub tryb demo)
   let result;
   try {
-    const raw = await aiChat([{ role: "system", content: SYSTEM_PROMPT }, ...recent]);
+    const raw = await aiChat([{ role: "system", content: SYSTEM_PROMPT }, ...recent], provider);
     result = parseAiContent(raw);
   } catch (e: any) {
     res.status(502).json({ error: e?.message || "Błąd odpowiedzi AI" });

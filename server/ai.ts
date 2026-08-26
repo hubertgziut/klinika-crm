@@ -243,9 +243,33 @@ const TOOLS = [
       parameters: { type: "object", properties: {}, additionalProperties: false },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "get_inbox_summary",
+      description: "Zwraca podsumowanie najnowszych wiadomości ze skrzynki e-mail (ostatnie 10: od kogo, temat, data).",
+      parameters: { type: "object", properties: {}, additionalProperties: false },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "send_whatsapp",
+      description: "Wysyła wiadomość WhatsApp przez mostek. chatId to numer w formacie 48XXXXXXXXX@s.whatsapp.net. Jeśli nie znasz chatId, poproś użytkownika o numer telefonu.",
+      parameters: {
+        type: "object",
+        properties: {
+          chatId: { type: "string", description: "np. 48501234567@s.whatsapp.net" },
+          message: { type: "string", description: "Treść wiadomości" },
+        },
+        required: ["chatId", "message"],
+        additionalProperties: false,
+      },
+    },
+  },
 ];
 
-function runTool(name: string, args: unknown): string {
+async function runTool(name: string, args: unknown): Promise<string> {
   const a = (args ?? {}) as Record<string, unknown>;
   switch (name) {
     case "search_products":
@@ -254,6 +278,17 @@ function runTool(name: string, args: unknown): string {
       return JSON.stringify(searchTasks(typeof a.query === "string" ? a.query : ""));
     case "get_summary":
       return JSON.stringify(getSummary());
+    case "get_inbox_summary": {
+      const rows = db.prepare(
+        "SELECT from_name, from_email, subject, mail_date FROM emails WHERE folder = 'INBOX' ORDER BY mail_date DESC LIMIT 10"
+      ).all() as any[];
+      return JSON.stringify(rows.map((r) => ({ from: r.from_name || r.from_email || "", subject: r.subject || "", date: r.mail_date || "" })));
+    }
+    case "send_whatsapp": {
+      const p = a as { chatId?: string; message?: string };
+      if (!p.chatId || !p.message) return JSON.stringify({ error: "Brak chatId lub treści" });
+      return JSON.stringify({ sent: await sendWhatsapp(p.chatId, p.message) });
+    }
     default:
       return JSON.stringify({ error: "Nieznane narzędzie: " + name });
   }
@@ -266,16 +301,25 @@ interface ChatApiConfig {
   model: string;
 }
 
-/** Konfiguracja aktywnego dostawcy AI (DeepSeek / OpenAI) — null = tryb demo. */
-function getChatConfig(): ChatApiConfig | null {
-  const p = getAiProvider();
-  if (p === "deepseek") {
+/** Konfiguracja aktywnego dostawcy AI (DeepSeek / OpenAI) — null = tryb demo.
+ *  override: wybór LLM z poziomu czatu (selektor w panelu AI). */
+function getChatConfig(override?: "auto" | "openai" | "deepseek"): ChatApiConfig | null {
+  const want = override && override !== "auto" ? override : getAiProvider();
+  if (want === "deepseek") {
     return { label: "DeepSeek", baseUrl: "https://api.deepseek.com", key: getDeepSeekKey(), model: getDeepSeekModel() };
   }
-  if (p === "openai") {
+  if (want === "openai") {
     return { label: "OpenAI", baseUrl: "https://api.openai.com/v1", key: getOpenAIKey(), model: OPENAI_MODEL };
   }
   return null;
+}
+
+/** Lista modeli dostępnych w selektorze LLM (panel AI). */
+export function getLlmOptions(): { id: "openai" | "deepseek"; label: string; model: string }[] {
+  return [
+    { id: "deepseek", label: "DeepSeek", model: getDeepSeekModel() },
+    { id: "openai", label: "OpenAI", model: OPENAI_MODEL },
+  ];
 }
 
 /** Wywołanie chat/completions (OpenAI-kompatybilne API — działa też dla DeepSeek). */
@@ -309,8 +353,8 @@ async function callChatCompletions(cfg: ChatApiConfig, messages: OpenAiMessage[]
  * tryb demo — te same narzędzia wykonane lokalnie na bazie + znane przykłady.
  * Zwraca surową treść odpowiedzi (JSON) do sparsowania przez route.
  */
-export async function aiChat(messages: AiMessage[]): Promise<string> {
-  const cfg = getChatConfig();
+export async function aiChat(messages: AiMessage[], provider?: "auto" | "openai" | "deepseek"): Promise<string> {
+  const cfg = getChatConfig(provider);
   if (!cfg) return demoReply(messages);
   const openAiMessages: OpenAiMessage[] = messages.map((m) => ({ role: m.role, content: m.content }));
   let data: any;
@@ -327,7 +371,7 @@ export async function aiChat(messages: AiMessage[]): Promise<string> {
           role: "tool",
           tool_call_id: tc?.id ?? "",
           name: tc?.function?.name ?? "",
-          content: runTool(tc?.function?.name ?? "", args),
+          content: await runTool(tc?.function?.name ?? "", args),
         });
       }
       continue;
@@ -335,6 +379,21 @@ export async function aiChat(messages: AiMessage[]): Promise<string> {
     break;
   }
   return data?.choices?.[0]?.message?.content ?? "";
+}
+
+async function sendWhatsapp(chatId: string, message: string): Promise<unknown> {
+  try {
+    const baseUrl = (getSetting("whatsapp_bridge_url") || process.env.WHATSAPP_BRIDGE_URL || "http://127.0.0.1:3001").replace(/\/$/, "");
+    const r = await fetch(baseUrl + "/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chatId, message }),
+      signal: AbortSignal.timeout(15000),
+    });
+    return await r.json().catch(() => ({ error: "Brak odpowiedzi mostka" }));
+  } catch (e: any) {
+    return { error: "Mostek WhatsApp niedostępny: " + (e?.message || "") };
+  }
 }
 
 // ===== Parsowanie odpowiedzi AI → {type, answer, products?} =====
@@ -389,7 +448,7 @@ export interface OrganizeRow { id?: string; cells: Record<string, unknown> }
  */
 export async function organizeData(columns: OrganizeColumn[], rows: OrganizeRow[]): Promise<{ rows: OrganizeRow[] }> {
   if (rows.length < 2) return { rows };
-  const cfg = getChatConfig();
+  const cfg = getChatConfig("auto");
   if (!cfg) return { rows: demoOrganize(columns, rows) };
   try {
     const sys =

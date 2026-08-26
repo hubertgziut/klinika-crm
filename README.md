@@ -34,6 +34,10 @@ Konta zespołu zakłada administrator w **Ustawienia → Zarządzanie kontami** 
 | Moduł | Opis |
 |---|---|
 | 🏠 Pulpit | Statystyki i skróty |
+| 📅 Kalendarz | Dyżury, spotkania, wizyty, zadania — widok miesiąca, przypomnienia (in-app + e-mail) |
+| 📧 Poczta | Skrzynka e-mail (IMAP): czytanie, wysyłka (SMTP), tworzenie zadań z maili |
+| 📱 WhatsApp | Wysyłka przez mostek WhatsApp Web (Baileys); AI też potrafi wysyłać |
+| ✨ Asystent AI (panel) | **Prawy panel w stylu mobilnego ChatGPT** — czat zawsze pod ręką, **mikrofon → lokalne Whisper v3**, selektor LLM (DeepSeek v4 flash / OpenAI) |
 | 📁 Projekty | Projekty z **gałęziami** (drzewo), zadania, kanban, oś czasu, komentarze |
 | ✅ Zadania | Globalna tablica kanban z filtrami |
 | 💬 Komunikator | Kanały + czaty prywatne, realtime (WebSocket), nieprzeczytane, obecność |
@@ -118,3 +122,16 @@ Więcej: https://developers.cloudflare.com/cloudflare-one/connections/connect-ne
   przez Tailscale (MagicDNS, resolver `100.100.100.100`). Naprawa: `tailscale set --accept-dns=false`
   (powrót: `tailscale set --accept-dns=true`). Można też sprawdzić adres bez DNS:
   `curl --resolve <host>:443:104.16.231.132 https://<host>/`.
+## 🆕 Moduły v2 (rozszerzenie)
+
+- **Kalendarz** (`📅` w menu): widok miesiąca, typy wydarzeń (dyżur/spotkanie/wizyta/zadanie/zamówienie),
+  uczestnicy i przypomnienia (5/15/30/60 min, 1 dzień) — powiadomienia w aplikacji i e-mail.
+- **Poczta (IMAP)**: Ustawienia → „Skrzynka e-mail (IMAP)” (host, port, user, hasło, TLS).
+  Worker synchronizuje INBOX co 60 s; /poczta — lista, podgląd, odpowiedź, tworzenie zadania z maila.
+- **WhatsApp**: przez lokalny mostek Baileys — Ustawienia → „WhatsApp” (adres mostka, domyślnie
+  http://127.0.0.1:3001). Uruchomienie: `node bridge.js --port 3001` w katalogu
+  ~/.hermes/hermes-agent/scripts/whatsapp-bridge; przy pierwszym starcie logowanie QR.
+- **Asystent AI — panel po prawej**: stały czat (styl mobilnego ChatGPT) ze wszystkimi modułami.
+  Pod polem tekstowym **selektor LLM** (Auto/DeepSeek/OpenAI) i **mikrofon 🎤** — transkrypcja
+  100% lokalnie przez whisper-cli (model ggml-large-v3). AI ma narzędzia: wyszukiwanie produktów/zadań,
+  podsumowania, **tworzenie zadań**, **kalendarz**, **podsumowanie skrzynki**, **wysyłka WhatsApp/e-mail**.
