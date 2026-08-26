@@ -98,6 +98,18 @@ export default function Tasks() {
     }
   }
 
+  async function quickAdd(status: TaskStatus, title: string) {
+    const pid = formProjectId || projects[0]?.id;
+    if (!pid) { pushToast(false, "Brak projektu — najpierw utwórz projekt"); return; }
+    try {
+      await api.post("/api/projects/" + pid + "/tasks", { title, status });
+      pushToast(true, "Zadanie dodane");
+      loadAll();
+    } catch (e: any) {
+      pushToast(false, e?.message || "Nie udało się dodać zadania");
+    }
+  }
+
   return (
     <div className="page">
       <div className="page-head">
@@ -137,6 +149,7 @@ export default function Tasks() {
       ) : (
         <Kanban tasks={filtered} onMove={handleMove} onOpenTask={setOpenTask}
           onAddTask={() => setShowForm(true)}
+          onQuickAdd={(status, title) => quickAdd(status, title)}
           projectId={formProjectId || undefined} onProductDrop={handleProductDrop} />
       )}
 

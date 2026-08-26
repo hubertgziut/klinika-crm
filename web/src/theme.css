@@ -283,6 +283,10 @@ label.field { display: flex; flex-direction: column; gap: 5px; font-size: 12.5px
 .modal p { color: var(--text); font-size: 13.5px; line-height: 1.55; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
 
+/* ===== Szybkie dodawanie zadania (nazwa + Enter) ===== */
+.quick-add { padding: 0 2px 4px; }
+.quick-add .input { padding: 7px 10px; font-size: 12.5px; border-radius: 9px; }
+
 /* ===== Prawy panel AI (mobilny ChatGPT) ===== */
 .ai-panel {
   width: 380px; flex: 0 0 380px; background: var(--panel);

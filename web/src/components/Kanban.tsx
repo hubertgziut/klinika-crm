@@ -8,6 +8,8 @@ interface KanbanProps {
   onMove: (taskId: string, status: TaskStatus, position: number) => void;
   onOpenTask: (task: Task) => void;
   onAddTask?: (status: TaskStatus) => void;
+  /** Szybkie dodawanie — wystarczy wpisać nazwę i wcisnąć Enter. */
+  onQuickAdd?: (status: TaskStatus, title: string) => void;
   /** Projekt kontekstu — do tworzenia zadania z karty produktu AI (drop). */
   projectId?: string;
   /** Wywoływane, gdy upuszczono kartę produktu AI na kolumnę. */
@@ -30,11 +32,28 @@ function readProduct(e: React.DragEvent): AiProduct | null {
   }
 }
 
-export default function Kanban({ tasks, onMove, onOpenTask, onAddTask, projectId, onProductDrop }: KanbanProps) {
+export default function Kanban({ tasks, onMove, onOpenTask, onAddTask, onQuickAdd, projectId, onProductDrop }: KanbanProps) {
   const [drag, setDrag] = useState<{ id: string } | null>(null);
   const [over, setOver] = useState<OverState | null>(null);
   const [extOver, setExtOver] = useState<TaskStatus | null>(null);
+  const [quickStatus, setQuickStatus] = useState<TaskStatus | null>(null);
+  const [quickTitle, setQuickTitle] = useState("");
   const suppressClick = useRef(false);
+  const quickRef = useRef<HTMLInputElement | null>(null);
+
+  function submitQuick(status: TaskStatus) {
+    const title = quickTitle.trim();
+    if (!title) { setQuickStatus(null); return; }
+    setQuickTitle("");
+    setQuickStatus(null);
+    onQuickAdd?.(status, title);
+  }
+  function toggleQuick(status: TaskStatus) {
+    if (quickStatus === status) { setQuickStatus(null); setQuickTitle(""); return; }
+    setQuickStatus(status);
+    setQuickTitle("");
+    setTimeout(() => quickRef.current?.focus(), 0);
+  }
 
   function tasksIn(status: TaskStatus): Task[] {
     return tasks.filter((t) => t.status === status).sort((a, b) => a.position - b.position);
@@ -119,14 +138,30 @@ export default function Kanban({ tasks, onMove, onOpenTask, onAddTask, projectId
               <span>{s.emoji}</span>
               <span>{s.label}</span>
               <span className="cnt">{column.length}</span>
-              {onAddTask && (
+              {onQuickAdd && (
                 <button
                   className="btn small ghost col-add"
-                  title={"Dodaj zadanie — " + s.label}
-                  onClick={(e) => { e.stopPropagation(); onAddTask(s.value); }}
-                >＋</button>
+                  title={"Dodaj zadanie — wpisz nazwę i Enter (" + s.label + ")"}
+                  onClick={(e) => { e.stopPropagation(); toggleQuick(s.value); }}
+                >{quickStatus === s.value ? "✕" : "＋"}</button>
               )}
             </div>
+            {quickStatus === s.value && (
+              <div className="quick-add">
+                <input
+                  ref={quickRef}
+                  className="input"
+                  value={quickTitle}
+                  placeholder="Nazwa zadania…"
+                  onChange={(e) => setQuickTitle(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") { e.preventDefault(); submitQuick(s.value); }
+                    if (e.key === "Escape") { setQuickStatus(null); setQuickTitle(""); }
+                  }}
+                  onBlur={() => { if (quickTitle.trim()) submitQuick(s.value); else { setQuickStatus(null); setQuickTitle(""); } }}
+                />
+              </div>
+            )}
             {column.map((task, i) => (
               <div
                 key={task.id}

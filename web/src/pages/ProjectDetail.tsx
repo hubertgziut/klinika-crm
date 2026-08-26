@@ -116,6 +116,17 @@ export default function ProjectDetail() {
   const total = project.taskCount;
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
 
+  async function quickAdd(status: TaskStatus, title: string) {
+    try {
+      await api.post("/api/projects/" + id + "/tasks", { title, status, branchId: branchFilter || null });
+      pushToast(true, "Zadanie dodane");
+      loadTasks();
+      loadProject();
+    } catch (e: any) {
+      pushToast(false, e?.message || "Nie udało się dodać zadania");
+    }
+  }
+
   return (
     <div className="page">
       <div className="page-head" style={{ marginBottom: 10 }}>
@@ -161,6 +172,7 @@ export default function ProjectDetail() {
           </div>
           <Kanban tasks={filteredTasks} onMove={handleMove} onOpenTask={setOpenTask}
             onAddTask={(s) => { setFormStatus(s); setShowTaskForm(true); }}
+            onQuickAdd={(status, title) => quickAdd(status, title)}
             projectId={project.id} onProductDrop={handleProductDrop} />
         </div>
       )}

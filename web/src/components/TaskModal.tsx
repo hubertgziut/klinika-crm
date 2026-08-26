@@ -124,7 +124,7 @@ export function TaskFormModal({
     projectId, title: task.title, description: task.description, branchId: task.branchId ?? "",
     status: task.status, priority: task.priority, assigneeId: task.assigneeId ?? "",
     startDate: task.startDate ?? "", dueDate: task.dueDate ?? "",
-  } : emptyForm(projectId, defaultStatus));
+  } : emptyForm(projectId || (projects && projects.length ? projects[0].id : ""), defaultStatus));
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
 
@@ -133,6 +133,7 @@ export function TaskFormModal({
   async function submit() {
     setErr("");
     if (!form.title.trim()) { setErr("Podaj tytuł zadania"); return; }
+    if (!form.projectId) { setErr("Wybierz projekt"); return; }
     setBusy(true);
     try {
       const body = {
