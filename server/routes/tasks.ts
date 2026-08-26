@@ -23,8 +23,8 @@ const taskPrioritySchema = z.enum(TASK_PRIORITIES);
 const createTaskSchema = z.object({
   title: z.string().min(1).max(300),
   description: z.string().max(20000).optional(),
-  branch_id: z.string().optional(),
-  branchId: z.string().optional(),
+  branch_id: z.string().nullable().optional(),
+  branchId: z.string().nullable().optional(),
   status: taskStatusSchema.optional(),
   priority: taskPrioritySchema.optional(),
   assignee_id: z.string().nullable().optional(),
